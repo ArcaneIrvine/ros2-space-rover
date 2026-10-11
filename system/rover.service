@@ -1,0 +1,15 @@
+[Unit]
+Description=ROS 2 Rover Launch
+After=network.target
+
+[Service]
+User=stavrose
+Environment="HOME=/home/stavrose"
+Environment="ROS_DOMAIN_ID=42"
+ExecStartPre=/bin/sleep 10
+ExecStart=/bin/bash -c "source /opt/ros/jazzy/setup.bash && source /home/stavrose/rover_ws/install/setup.bash && ros2 launch rover_pkg rover.launch.py"
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
