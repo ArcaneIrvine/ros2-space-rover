@@ -275,7 +275,7 @@ The larger DPT_Hybrid model was tested and rejected: about 8 s per frame on the 
 6. **Build:**
    ```bash
    mkdir -p ~/rover_ws/src && cd ~/rover_ws/src
-   git clone https://github.com/YOUR_USERNAME/ros2-space-rover.git .
+   git clone https://github.com/stavrosefth/ros2-space-rover.git .
    cd ~/rover_ws && colcon build
    ```
 
