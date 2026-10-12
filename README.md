@@ -4,7 +4,7 @@ A small solar-rechargeable 4-wheel rover, modeled on a planetary rover, that per
 
 This was a learning project: the goal was to build each layer of a mobile robot, from the power system and wiring up to SLAM and path planning, and get them working together on real, inexpensive hardware.
 
-![The rover with its solar panel](docs/images/rover-hero.JPG)
+![The rover with its solar panel](docs/images/rover-hero.jpg)
 
 ![Camera frame next to the MiDaS depth estimate](docs/images/rgb-vs-depth.png)
 *Left: what the camera sees. Right: depth estimated from that single image by MiDaS (bright = near).*
@@ -32,12 +32,12 @@ This was a learning project: the goal was to build each layer of a mobile robot,
 
 | | |
 |---|---|
-| ![Front view](docs/images/rover-front.JPG) | ![Side view](docs/images/rover-side.JPG) |
+| ![Front view](docs/images/rover-front.jpg) | ![Side view](docs/images/rover-side.jpg) |
 | *Sensor mast: camera on top, ultrasonic sensor below* | *Layout front to back: sensors, Pi 5 with SSD, buck converters, battery* |
-| ![Electronics](docs/images/rover-electronics.JPG) | ![Power](docs/images/rover-power.JPG) |
+| ![Electronics](docs/images/rover-electronics.jpg) | ![Power](docs/images/rover-power.jpg) |
 | *Motor drivers and GPIO wiring* | *3S Li-ion pack with protection module and XT60 connectors* |
 
-![Underside](docs/images/rover-underside.JPG)
+![Underside](docs/images/rover-underside.jpg)
 *Underside: four TT gear motors and the CN3791 MPPT solar charger.*
 
 ### Specifications
@@ -177,13 +177,21 @@ The rover has no wheel encoders. Linear velocity comes from the commanded speed,
 
 A complementary filter (98% gyro, 2% accelerometer) estimates pitch and roll. The node retries failed I2C reads, skips any cycle with a failed axis, rejects implausible accelerometer readings, and caps the time step. Together these removed false tilt alarms caused by motor noise on the I2C bus.
 
-<!-- Uncomment when the mapping screenshots are in docs/images:
-### Mapping results
+---
 
-| Point cloud | Occupancy grid |
+## Mapping results
+
+| Single forward view | After a full 360° turn |
 |---|---|
-| ![Point cloud](docs/images/pointcloud.png) | ![Occupancy map](docs/images/occupancy-map.png) |
--->
+| ![Point cloud from a single forward view](docs/images/pointcloud-front.png) | ![Point cloud after a 360 degree turn](docs/images/pointcloud-360.png) |
+
+*3D point clouds built by RTAB-Map from neural depth alone. The red, green and blue axes mark the rover (x forward, y left, z up), and the white cone is the ultrasonic sensor's field of view.*
+
+| Occupancy grid | With real furniture and walls marked |
+|---|---|
+| ![Occupancy grid](docs/images/occupancy-map.png) | ![Occupancy grid with furniture and walls marked in red](docs/images/occupancy-map-annotated.png) |
+
+*The 2D map that Nav2 plans on: light grey is free space, black is obstacles and the dark background is unexplored. On the right, red outlines show where the real furniture and walls were. Each grid square is 1 m.*
 
 ---
 
@@ -261,7 +269,7 @@ The larger DPT_Hybrid model was tested and rejected: about 8 s per frame on the 
 6. **Build:**
    ```bash
    mkdir -p ~/rover_ws/src && cd ~/rover_ws/src
-   git clone https://github.com/ArcaneIrvine/ros2-space-rover.git .
+   git clone https://github.com/YOUR_USERNAME/ros2-space-rover.git .
    cd ~/rover_ws && colcon build
    ```
 
@@ -303,9 +311,7 @@ python3 station/rover_station.py
 | M / A | Manual / autonomous mode |
 | Q | Quit |
 
-<!-- Uncomment when the screenshot is in docs/images:
-![Control station](docs/images/rover-station.png)
--->
+![Terminal control station](docs/images/rover-station.png)
 
 Open RViz2 with Fixed Frame `map` and add `/map`, `/cloud_map`, `/camera/image_raw` and `/camera/depth` to watch the rover map its surroundings.
 
