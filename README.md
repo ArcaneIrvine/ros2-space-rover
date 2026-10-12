@@ -181,17 +181,23 @@ A complementary filter (98% gyro, 2% accelerometer) estimates pitch and roll. Th
 
 ## Mapping results
 
-| Single forward view | After a full 360° turn |
-|---|---|
-| ![Point cloud from a single forward view](docs/images/pointcloud-front.png) | ![Point cloud after a 360 degree turn](docs/images/pointcloud-360.png) |
+### 3D point cloud
 
-*3D point clouds built by RTAB-Map from neural depth alone. The red, green and blue axes mark the rover (x forward, y left, z up), and the white cone is the ultrasonic sensor's field of view.*
+<p align="center">
+  <img src="docs/images/pointcloud-front.png" width="49%" alt="Point cloud from a single forward view">
+  <img src="docs/images/pointcloud-360.png" width="49%" alt="Point cloud after a full 360 degree turn">
+</p>
 
-| Occupancy grid | With real furniture and walls marked |
-|---|---|
-| ![Occupancy grid](docs/images/occupancy-map.png) | ![Occupancy grid with furniture and walls marked in red](docs/images/occupancy-map-annotated.png) |
+*Left: a single forward view. Right: after a full 360° turn. Both are built by RTAB-Map from neural depth alone. The red, green and blue axes mark the rover (x forward, y left, z up), and the white cone is the ultrasonic sensor's field of view.*
 
-*The 2D map that Nav2 plans on: light grey is free space, black is obstacles and the dark background is unexplored. On the right, red outlines show where the real furniture and walls were. Each grid square is 1 m.*
+### 2D occupancy map
+
+<p align="center">
+  <img src="docs/images/occupancy-map.png" width="49%" alt="Occupancy grid">
+  <img src="docs/images/occupancy-map-annotated.png" width="49%" alt="Occupancy grid with the real couch and wall corners marked">
+</p>
+
+*The map Nav2 plans on: light grey is free space, black is obstacles and the dark background is unexplored. Left: the map as built. Right: the same map with the real couch and wall corners marked. Each grid square is 1 m.*
 
 ---
 
