@@ -4,7 +4,7 @@ A small solar-rechargeable 4-wheel rover, modeled on a planetary rover, that per
 
 This was a learning project: the goal was to build each layer of a mobile robot, from the power system and wiring up to SLAM and path planning, and get them working together on real, inexpensive hardware.
 
-![The rover with its solar panel](docs/images/rover-hero.jpg)
+![The rover with its solar panel](docs/images/rover-hero.JPG)
 
 ![Camera frame next to the MiDaS depth estimate](docs/images/rgb-vs-depth.png)
 *Left: what the camera sees. Right: depth estimated from that single image by MiDaS (bright = near).*
@@ -32,12 +32,12 @@ This was a learning project: the goal was to build each layer of a mobile robot,
 
 | | |
 |---|---|
-| ![Front view](docs/images/rover-front.jpg) | ![Side view](docs/images/rover-side.jpg) |
+| ![Front view](docs/images/rover-front.JPG) | ![Side view](docs/images/rover-side.JPG) |
 | *Sensor mast: camera on top, ultrasonic sensor below* | *Layout front to back: sensors, Pi 5 with SSD, buck converters, battery* |
-| ![Electronics](docs/images/rover-electronics.jpg) | ![Power](docs/images/rover-power.jpg) |
+| ![Electronics](docs/images/rover-electronics.JPG) | ![Power](docs/images/rover-power.JPG) |
 | *Motor drivers and GPIO wiring* | *3S Li-ion pack with protection module and XT60 connectors* |
 
-![Underside](docs/images/rover-underside.jpg)
+![Underside](docs/images/rover-underside.JPG)
 *Underside: four TT gear motors and the CN3791 MPPT solar charger.*
 
 ### Specifications
