@@ -1,12 +1,10 @@
 # ROS 2 Space Rover
 
-A small 4-wheel rover, modeled on a planetary rover, that perceives depth with a **single camera and a neural network**, builds a map with **visual SLAM**, plans paths with **Nav2**, and keeps itself safe with a **reactive safety layer**. Everything runs on a Raspberry Pi 5 with ROS 2 Jazzy. There is no lidar and no stereo camera.
+A small solar-rechargeable 4-wheel rover, modeled on a planetary rover, that perceives depth with a **single camera and a neural network**, builds a map with **visual SLAM**, plans paths with **Nav2**, and keeps itself safe with a **reactive safety layer**. Everything runs on a Raspberry Pi 5 with ROS 2 Jazzy. There is no lidar and no stereo camera.
 
-This was a learning project: the goal was to build each layer of a mobile robot stack myself and get them working together on real, inexpensive hardware.
+This was a learning project: the goal was to build each layer of a mobile robot, from the power system and wiring up to SLAM and path planning, and get them working together on real, inexpensive hardware.
 
-<!-- Uncomment when the photo is in docs/images:
-![The rover](docs/images/rover-hero.jpg)
--->
+![The rover with its solar panel](docs/images/rover-hero.jpg)
 
 ![Camera frame next to the MiDaS depth estimate](docs/images/rgb-vs-depth.png)
 *Left: what the camera sees. Right: depth estimated from that single image by MiDaS (bright = near).*
@@ -21,11 +19,81 @@ This was a learning project: the goal was to build each layer of a mobile robot 
 
 | Layer | What it does | How |
 |---|---|---|
+| **Power** | Battery power with solar recharging | 3S Li-ion pack, separate supplies for computer and motors, MPPT solar charger |
 | **Perception** | Depth from one camera | MiDaS (small) monocular depth estimation, scaled to metres |
 | **SLAM** | Map and localization | RTAB-Map with RGB + neural depth + odometry |
 | **Planning** | Path planning on the map | Nav2 (planner, controller, behaviors, BT navigator) |
 | **Control** | Manual and autonomous driving | Terminal control station over Wi-Fi, explore/avoid mission node |
 | **Safety** | Always-on protection | Ultrasonic slow-down/stop and IMU tilt cut-off, between every command source and the motors |
+
+---
+
+## The rover
+
+| | |
+|---|---|
+| ![Front view](docs/images/rover-front.jpg) | ![Side view](docs/images/rover-side.jpg) |
+| *Sensor mast: camera on top, ultrasonic sensor below* | *Layout front to back: sensors, Pi 5 with SSD, buck converters, battery* |
+| ![Electronics](docs/images/rover-electronics.jpg) | ![Power](docs/images/rover-power.jpg) |
+| *Motor drivers and GPIO wiring* | *3S Li-ion pack with protection module and XT60 connectors* |
+
+![Underside](docs/images/rover-underside.jpg)
+*Underside: four TT gear motors and the CN3791 MPPT solar charger.*
+
+### Specifications
+
+| | |
+|---|---|
+| Footprint | ~15 × 25 cm |
+| Weight | 890 g |
+| Wheels | 4 × 5.5 cm mecanum wheels, each with its own TT gear motor |
+| Camera height | 20 cm, tilted 10° down |
+| Battery | 3S Li-ion, 11.1 V nominal (12.6 V full), 3200 mAh, ~35.5 Wh |
+| Solar panel | 10 W, 18 V |
+| Compute | Raspberry Pi 5, booting Ubuntu 24.04 from an NVMe SSD (no SD card) |
+
+### Parts
+
+| Part | Details |
+|---|---|
+| Chassis | Aluminium 4WD mecanum-wheel chassis kit |
+| Motors | 4 × TT DC gear motors, run at 6 V |
+| Motor drivers | 2 × TB6612FNG (left and right side pairs share a speed signal) |
+| Computer | Raspberry Pi 5 with an M.2 HAT and NVMe SSD |
+| Camera | Raspberry Pi Camera v2 (IMX219) on an aluminium mast |
+| Distance sensor | HC-SR04-style ultrasonic sensor, facing forward |
+| IMU | MPU6500 over I2C (address `0x68`) |
+| Cells | 3 × LG INR18650-MH1, 3.6 V 3200 mAh, in series (3S) |
+| Battery protection | 3S 10 A Li-ion protection module (BMS) |
+| Power conversion | 2 × step-down (buck) converters: 5 V for the Pi, 6 V for the motors |
+| Pi power input | USB-C PD board and a short USB-C cable |
+| Solar charging | 10 W 18 V panel (Voc 22.3 V, Isc 0.6 A, 340 × 232 mm) with a CN3791 3S MPPT charge controller |
+| Main power | Toggle switch on the battery output, with a green power-on LED |
+| Control station | Ubuntu 24.04 VM (VirtualBox, bridged network) running RViz2 and the control station |
+
+---
+
+## Power system
+
+```mermaid
+flowchart LR
+    solar["Solar panel 10 W / 18 V"] -->|"DC jack"| mppt["CN3791 MPPT charger"]
+    mppt --> bms["3S BMS 10 A"]
+    cells["3 × 18650 cells (3S)"] --- bms
+    bms --> sw["Main switch + green LED"]
+    sw -->|"XT60"| buck5["Buck converter 5 V"]
+    sw -->|"XT60"| buck6["Buck converter 6 V"]
+    buck5 --> pd["USB-C PD board"]
+    pd -->|"USB-C"| pi["Raspberry Pi 5 + NVMe SSD"]
+    buck6 --> drv["2 × TB6612FNG"]
+    drv --> motors["4 × TT gear motors"]
+```
+
+- **Separate supplies for the computer and the motors.** DC motors draw current spikes when they start, reverse or stall, which makes the supply voltage dip. On a shared supply that can brown out the Pi and reboot it mid-run. Giving the Pi and the motors their own buck converter keeps the Pi's supply stable whatever the motors are doing.
+- **6 V for the motors** matches the 3–6 V rating of TT gear motors.
+- **Solar charging:** the panel's 18 V working voltage sits comfortably above the pack's 12.6 V full-charge voltage, which the CN3791 MPPT controller needs to charge a 3S pack. In ideal sun, the 10 W panel could refill the ~35.5 Wh pack in roughly 4–5 hours; real conditions are slower.
+- **Main switch:** the toggle switch sits on the battery output. Closing it lights the green LED and powers up the whole rover.
+- **Design trade-off:** the Pi 5 normally negotiates 5 A from a USB-C PD power supply. Fed a fixed 5 V supply, it boots and runs normally but limits its USB ports to 600 mA in total. This doesn't affect the rover, because the camera uses the CSI ribbon cable and the IMU uses I2C, but it would matter for power-hungry USB devices.
 
 ---
 
@@ -59,8 +127,8 @@ Every command source (manual, autonomous, Nav2) publishes to `/cmd_vel_raw`. Onl
 ```
 map ─(RTAB-Map)─► odom ─(odometry_node)─► base_link
                                              ├── imu_sensor
-                                             ├── ultrasonic_sensor
-                                             └── camera  (10° down)
+                                             ├── ultrasonic_sensor   (10 cm forward, 5 cm up)
+                                             └── camera              (10 cm forward, 20 cm up, 10° down)
                                                    └── camera_optical
 ```
 
@@ -68,42 +136,20 @@ map ─(RTAB-Map)─► odom ─(odometry_node)─► base_link
 
 ---
 
-## Hardware
-
-| Component | Details |
-|---|---|
-| Computer | Raspberry Pi 5, Ubuntu 24.04, ROS 2 Jazzy |
-| Drive | 4 DC motors, 2× TB6612FNG drivers, skid steering |
-| Camera | Raspberry Pi Camera v2 (IMX219), 20 cm high, tilted 10° down |
-| Distance | HC-SR04 ultrasonic sensor, facing forward |
-| IMU | MPU6500 over I2C (address `0x68`) |
-| Control station | Ubuntu 24.04 VM (VirtualBox, bridged network) running RViz2 and the control station |
-
-<!-- Uncomment when the photos are in docs/images:
-| | |
-|---|---|
-| ![Side view](docs/images/rover-side.jpg) | ![Top view](docs/images/rover-top.jpg) |
--->
-
-<details>
-<summary>GPIO pin map (BCM)</summary>
-
-| Signal | Pin | Purpose |
-|---|---|---|
-| BIN1 / BIN2 | 22 / 23 | Front-left direction |
-| AIN1 / AIN2 | 17 / 27 | Front-right direction |
-| BIN1_2 / BIN2_2 | 26 / 19 | Rear-left direction |
-| AIN1_2 / AIN2_2 | 16 / 20 | Rear-right direction |
-| STBY1 / STBY2 | 24 / 25 | Driver enable |
-| PWMA | 12 | Right side speed |
-| PWMB | 13 | Left side speed |
-| TRIG / ECHO | 5 / 6 | Ultrasonic sensor |
-
-</details>
-
----
-
 ## How it works
+
+### Kinematics (`motor_driver_node`)
+
+The rover drives like a tank (differential or skid steering). A velocity command with forward speed `v` and turn rate `ω` becomes left and right wheel commands:
+
+```
+left  = clamp(v − ω, −1, 1)
+right = clamp(v + ω, −1, 1)
+```
+
+Each side's value sets the direction pins and the PWM duty cycle for both wheels on that side. The values are **fractions of full motor power, not metres per second**: `v = 0.3` means 30% power. Without wheel encoders there is no speed feedback, which is one reason the odometry drifts.
+
+**Mecanum wheels:** the wheels' angled rollers allow sideways movement (strafing) when diagonal wheel pairs spin in opposite directions. The current software doesn't use this, but the wiring already supports it: every wheel has its own direction pins, and strafing needs all four wheels at the same speed, which the shared left/right speed signals can provide.
 
 ### Neural depth (`depth_node`)
 
@@ -170,13 +216,29 @@ The larger DPT_Hybrid model was tested and rejected: about 8 s per frame on the 
 └── docs/images/
 ```
 
+<details>
+<summary>GPIO pin map (BCM)</summary>
+
+| Signal | Pin | Purpose |
+|---|---|---|
+| BIN1 / BIN2 | 22 / 23 | Front-left direction |
+| AIN1 / AIN2 | 17 / 27 | Front-right direction |
+| BIN1_2 / BIN2_2 | 26 / 19 | Rear-left direction |
+| AIN1_2 / AIN2_2 | 16 / 20 | Rear-right direction |
+| STBY1 / STBY2 | 24 / 25 | Driver enable |
+| PWMA | 12 | Right side speed |
+| PWMB | 13 | Left side speed |
+| TRIG / ECHO | 5 / 6 | Ultrasonic sensor |
+
+</details>
+
 ---
 
 ## Setup
 
 ### Raspberry Pi 5
 
-1. Install **ROS 2 Jazzy** plus these packages:
+1. Install **Ubuntu 24.04** and **ROS 2 Jazzy**, plus these packages:
    ```bash
    sudo apt install ros-jazzy-cv-bridge ros-jazzy-rtabmap-ros ros-jazzy-rmw-cyclonedds-cpp \
      ros-jazzy-navigation2 ros-jazzy-nav2-bringup ros-jazzy-teleop-twist-keyboard i2c-tools
@@ -199,7 +261,7 @@ The larger DPT_Hybrid model was tested and rejected: about 8 s per frame on the 
 6. **Build:**
    ```bash
    mkdir -p ~/rover_ws/src && cd ~/rover_ws/src
-   git clone https://github.com/YOUR_USERNAME/ros2-space-rover.git .
+   git clone https://github.com/ArcaneIrvine/ros2-space-rover.git .
    cd ~/rover_ws && colcon build
    ```
 
@@ -251,6 +313,7 @@ Open RViz2 with Fixed Frame `map` and add `/map`, `/cloud_map`, `/camera/image_r
 
 ## Lessons learned
 
+- **Power is a design problem, not an afterthought.** Separate converters for the computer and the motors stop motor current spikes from rebooting the Pi.
 - **The Pi 5 is different.** `RPi.GPIO` doesn't work, and the camera needs a newer libcamera than Ubuntu ships.
 - **Frames matter.** Images must be stamped with an optical frame (`camera_optical`, z forward). Before that frame existed, the point cloud floated above the rover.
 - **Neural depth needs a stable scale.** Per-frame normalization looks fine in a single image but destroys a map built over time.
@@ -263,6 +326,7 @@ Open RViz2 with Fixed Frame `map` and add `/map`, `/cloud_map`, `/camera/image_r
 
 - **Short depth range.** Neural depth is reliable only between about 0.2 and 1.0 m, limited by the camera tilt and a calibration based on few data points.
 - **Few loop closures.** At ~0.8 Hz depth with MiDaS accuracy, RTAB-Map rarely finds enough visual inliers to close loops.
+- **Uncalibrated speed.** Drive commands are motor power fractions, not real speeds, and there are no wheel encoders.
 - **Command arbitration.** The control station, the mission node and Nav2 all publish to `/cmd_vel_raw`. A dedicated navigation mode or `twist_mux` would stop them competing.
 - **Nav2 goals from the remote station.** Goals sent from RViz2 on the VM have crashed `bt_navigator`; a DDS or package-version mismatch between the two machines is the suspected cause.
 - **No command timeout.** If the control station disconnects mid-drive, the safety node keeps passing the last command through.
@@ -271,7 +335,9 @@ Open RViz2 with Fixed Frame `map` and add `/map`, `/cloud_map`, `/camera/image_r
 ## Future work
 
 - Command timeout in the safety node and a `twist_mux` for command arbitration
-- Wheel encoders for real odometry
+- Sideways strafing with the mecanum wheels
+- Wheel encoders for real speed control and odometry
+- Battery voltage and solar charge monitoring, published as ROS topics
 - Camera calibration and more depth calibration points
 - Persistent maps and RTAB-Map localization mode
 - GPU or accelerator inference (e.g. a Hailo AI HAT) for faster, higher-quality depth
